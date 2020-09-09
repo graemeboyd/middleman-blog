@@ -38,8 +38,10 @@ module Middleman
         }
 
         @source_template           = uri_template options.sources
+        @source_template_regexp    = @source_template.to_regexp
         @permalink_template        = uri_template options.permalink
         @subdir_template           = uri_template options.sources.sub(/(\.[^.{}\/]+)?$/, '/{+path}')
+        @subdir_template_regexp    = @subdir_template.to_regexp
         @subdir_permalink_template = uri_template options.permalink.sub(/(\.[^.{}\/]+)?$/, '/{+path}')
       end
 
@@ -127,14 +129,14 @@ module Middleman
         used_resources = []
 
         resources.each do |resource|
-          if resource.ignored?
+          if resource.ignored? || !(@source_template_regexp.match(resource.path) || @source_template_regexp.match(resource.path))
             # Don't bother blog-processing ignored stuff
             used_resources << resource
             next
           end
 
           if (params = extract_source_params(resource.path))
-            article = convert_to_article(resource)
+            article = convert_to_article(resource, params)
             next unless publishable?(article)
 
             # Add extra parameters from the URL to the page metadata
@@ -219,11 +221,12 @@ module Middleman
       ##
       #
       ##
-      def convert_to_article(resource)
+      def convert_to_article(resource, params = nil)
         return resource if resource.is_a?(BlogArticle)
 
         resource.extend BlogArticle
         resource.blog_controller = controller
+        resource.params = params
 
         if !options.preserve_locale && (locale = resource.locale || resource.lang)
           resource.add_metadata options: { lang: locale, locale: locale }, locals: { lang: locale, locale: locale }

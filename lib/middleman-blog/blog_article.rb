@@ -19,6 +19,7 @@ module Middleman
       ##
       def self.extended(base)
         base.class.send(:attr_accessor, :blog_controller)
+        base.class.send(:attr_accessor, :params)
       end
 
       ##
@@ -337,8 +338,8 @@ module Middleman
       # @return [String]
       ##
       def path_part(part)
-        @_path_parts ||= Blog::UriTemplates.extract_params(blog_data.source_template, path)
-        @_path_parts[part.to_s]
+        @params ||= Blog::UriTemplates.extract_params(blog_data.source_template, path)
+        @params[part.to_s]
       end
     end
   end
